@@ -3,7 +3,6 @@ const orderModel = require("../models/orderModel")
 const productModel=require("../models/productModel")
 const userModel = require("../models/userModel")
 const mongoose =require("mongoose")
-const { status } = require("express/lib/response")
 
 
 //--------------------------------------------------------------------------//
@@ -11,7 +10,8 @@ const isValidObjectId = function (ObjectId) {
     return mongoose.Types.ObjectId.isValid(ObjectId)
 }
 
-// ********************************************** POST /users/:userId/orders *********************************************** //
+//--------------------------------------------------------------------------//
+
 
 const createOrder = async function(req,res){
     try{
@@ -35,6 +35,8 @@ const createOrder = async function(req,res){
         if(!checkCartId){
             return res.status(400).send({Status: false , message: "cart does not exist"})
         }
+
+
 
         //--------------checking userId in cart model , it exist or not -----------------------------//
 
@@ -76,6 +78,8 @@ const createOrder = async function(req,res){
             }
         }
 
+
+
         body.totalItems = checkUserwithCart.totalItems
         body.items = checkUserwithCart.items
         body.totalPrice = checkUserwithCart.totalPrice
@@ -92,13 +96,13 @@ const createOrder = async function(req,res){
     }
 }
 
-// ********************************************** PUT /users/:userId/orders  ***************************************************** //
+
 const updateOrder= async function(req,res){
     try{
 
         let body=req.body
 
-        let {orderId,status,cancellable}=body
+        let {orderId}=body
 
         if(Object.keys(body).length === 0 ){
             return res.status(400).send({Status: false , message: "Please provide data"})   
@@ -138,34 +142,8 @@ const updateOrder= async function(req,res){
             return res.status(200).send({ status: true, message: "Success", data: updateOrderDetail })
         }
 
-        if(!status){
-            return res.status(400).send({Status: false , message: "Please enter status"}) 
-        }
+        return res.status(400).send({Status: false , message: "You can not cancelled this Item"})
 
-        if(status || status == ""){
-            status = status.toLowerCase()
-            if(status == "pending" ||status == "completed" || status == "cancelled" ){
-                body.status = status
-            }else{
-                return res.status(400).send({Status: false , message: "Please enter valid status"})
-            }
-        }
-        if(cancellable){
-            console.log("cancelleable   ", typeof cancellable)
-            if(typeof cancellable !== "boolean"){
-
-                return res.status(400).send({Status:false, message:"cancellable is not valid, please press true/false"})
-            
-            }
-            body.cancellable=cancellable
-
-            console.log("cancelleable   ",  cancellable)
-            
-        }
-
-        let updateOrderDetail= await orderModel.findOneAndUpdate({_id:orderId,isDeleted:false},{status:status,cancellable:cancellable},{new:true}).select({ "__v": 0})
-
-        return res.status(200).send({Status: true , message: "Success",data:updateOrderDetail})
 
     }catch(err){
         return res.status(500).send({Status: false , message: err.message})
